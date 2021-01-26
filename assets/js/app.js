@@ -10,7 +10,7 @@ var margin = {
 };
 
 var width = svgWidth - margin.left - margin.right;
-var height = svgHeight - margin.top - margin.bottom;djn
+var height = svgHeight - margin.top - margin.bottom;
 
 // Create an SVG wrapper, append an SVG group that will hold our chart,
 // and shift the latter by left and top margins.
@@ -28,11 +28,11 @@ var chartGroup = svg.append("g")
 var chosenXAxis = "poverty";
 
 // function used for updating x-scale var upon click on axis label
-function xScale(healthcareLow, chosenXAxis) {
+function xScale(healthcare, chosenXAxis) {
   // create scales
   var xLinearScale = d3.scaleLinear()
-    .domain([d3.min(healthcareLow, d => d[chosenXAxis]) * 0.8,
-      d3.max(healthcareLow, d => d[chosenXAxis]) * 1.2
+    .domain([d3.min(healthcare, d => d[chosenXAxis]) * 0.8,
+      d3.max(healthcare, d => d[chosenXAxis]) * 1.2
     ])
     .range([0, width]);
 
@@ -67,18 +67,18 @@ function updateToolTip(chosenXAxis, circlesGroup) {
 
   var label;
 
-  if (chosenXAxis === "hair_length") {
-    label = "Hair Length:";
+  if (chosenXAxis === "poverty") {
+    label = "Poverty:";
   }
   else {
-    label = "# of Albums:";
+    label = "State:";
   }
 
   var toolTip = d3.tip()
     .attr("class", "tooltip")
     .offset([80, -60])
     .html(function(d) {
-      return (`${d.rockband}<br>${label} ${d[chosenXAxis]}`);
+      return (`${d.state}<br>${label} ${d[chosenXAxis]}`);
     });
 
   circlesGroup.call(toolTip);
@@ -95,22 +95,22 @@ function updateToolTip(chosenXAxis, circlesGroup) {
 }
 
 // Retrieve data from the CSV file and execute everything below
-d3.csv("hairData.csv").then(function(hairData, err) {
+d3.csv("data.csv").then(function(healthcareData, err) {
   if (err) throw err;
 
   // parse data
-  hairData.forEach(function(data) {
-    data.hair_length = +data.hair_length;
-    data.num_hits = +data.num_hits;
-    data.num_albums = +data.num_albums;
+  healthcareData.forEach(function(data) {
+    data.poverty = +data.poverty;
+    data.healthcare = +data.healthcare;
+    //data.num_albums = +data.num_albums;
   });
 
   // xLinearScale function above csv import
-  var xLinearScale = xScale(hairData, chosenXAxis);
+  var xLinearScale = xScale(healthcareData, chosenXAxis);
 
   // Create y scale function
   var yLinearScale = d3.scaleLinear()
-    .domain([0, d3.max(hairData, d => d.num_hits)])
+    .domain([0, d3.max(healthcareData, d => d.healthcare)])
     .range([height, 0]);
 
   // Create initial axis functions
@@ -129,13 +129,13 @@ d3.csv("hairData.csv").then(function(hairData, err) {
 
   // append initial circles
   var circlesGroup = chartGroup.selectAll("circle")
-    .data(hairData)
+    .data(healthcareData)
     .enter()
     .append("circle")
     .attr("cx", d => xLinearScale(d[chosenXAxis]))
-    .attr("cy", d => yLinearScale(d.num_hits))
-    .attr("r", 20)
-    .attr("fill", "pink")
+    .attr("cy", d => yLinearScale(d.healthcare))
+    .attr("r", 7)
+    .attr("fill", "blue")
     .attr("opacity", ".5");
 
   // Create group for two x-axis labels
@@ -147,14 +147,13 @@ d3.csv("hairData.csv").then(function(hairData, err) {
     .attr("y", 20)
     .attr("value", "hair_length") // value to grab for event listener
     .classed("active", true)
-    .text("Hair Metal Ban Hair Length (inches)");
+    .text("In Poverty (%)");
 
   var albumsLabel = labelsGroup.append("text")
     .attr("x", 0)
     .attr("y", 40)
     .attr("value", "num_albums") // value to grab for event listener
     .classed("inactive", true)
-    .text("# of Albums Released");
 
   // append y axis
   chartGroup.append("text")
@@ -163,7 +162,8 @@ d3.csv("hairData.csv").then(function(hairData, err) {
     .attr("x", 0 - (height / 2))
     .attr("dy", "1em")
     .classed("axis-text", true)
-    .text("Number of Billboard 500 Hits");
+    .style("text-anchor", "middle")
+    .text("Healthcare (%)");
 
   // updateToolTip function above csv import
   var circlesGroup = updateToolTip(chosenXAxis, circlesGroup);
@@ -182,7 +182,7 @@ d3.csv("hairData.csv").then(function(hairData, err) {
 
         // functions here found above csv import
         // updates x scale for new data
-        xLinearScale = xScale(hairData, chosenXAxis);
+        xLinearScale = xScale(healthcareData, chosenXAxis);
 
         // updates x axis with transition
         xAxis = renderAxes(xLinearScale, xAxis);
